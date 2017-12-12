@@ -76,4 +76,72 @@ abstract class Model extends \Phalcon\Mvc\Model
         }
     }
 
+    /**
+     * @desc
+     * @author limx
+     * @param mixed $parameters
+     * @return \Phalcon\Mvc\Model\ResultsetInterface
+     */
+    public function get($parameters = null)
+    {
+        $dependencyInjector = $this->getDI();
+        /** @var \Phalcon\Mvc\Model\Manager $manager */
+        $manager = $dependencyInjector->getShared("modelsManager");
+
+        $params = [];
+        if (!is_array($parameters)) {
+            $params[] = $parameters;
+        } else {
+            $params = $parameters;
+        }
+
+        /**
+         * Builds a query with the passed parameters
+         */
+        $builder = $manager->createBuilder($params);
+        $builder->from(get_called_class());
+
+        $query = $builder->getQuery();
+
+        /**
+         * Check for bind parameters
+         */
+        if (isset($params["bind"]) && $bindParams = $params["bind"]) {
+            if (is_array($bindParams)) {
+                $query->setBindParams($bindParams, true);
+            }
+
+            if (isset($params["bindTypes"]) && $bindTypes = $params["bindTypes"]) {
+                if (is_array($bindTypes)) {
+                    $query->setBindTypes(bindTypes, true);
+                }
+            }
+        }
+
+        /**
+         * Pass the cache options to the query
+         */
+        if (isset($params["cache"]) && $cache = $params["cache"]) {
+            $query->cache($cache);
+        }
+
+        /**
+         * Execute the query passing the bind-params and casting-types
+         */
+        $resultset = $query->execute();
+
+        if (is_object($resultset)) {
+            if (isset($params['hydration']) && $hydration = $params['hydration']) {
+                $resultset->setHydrateMode($hydration);
+            }
+        }
+
+        return $resultset;
+    }
+
+    public function first()
+    {
+
+    }
+
 }
